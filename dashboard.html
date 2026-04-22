@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>TrackToGreen | Don't lose track of your exams.</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="style.css">
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    </head>
+    <body>
+        <div class="app-container">
+    
+            <header class="top-nav">
+                <div class="logo">
+                    tracktogreen<span class="dot">.com</span>
+                </div>
+            </header>
+
+            <main class="main-wrapper">
+                <div class="central-card">
+                    
+                    <div class="panel-header">
+                        <div class="title-section">
+                            <h2>My Tests</h2>
+                        </div>
+                        <div class="action-section">
+                            <button id="add-test-btn" class="btn-primary">+ Add Test</button>
+                            <button id="logout-btn" class="btn-logout">Logout</button>
+                        </div>
+                    </div>
+
+                    <div id="test-list" class="test-grid">
+                        <p class="empty-note">Loading...</p>
+                    </div>
+
+                    <div id="topics-view" class="hidden">
+                        <div class="view-header">
+                            <button id="back-to-tests" class="btn-ghost">← Back to all tests</button>
+                            <h2 id="current-test-name">Test Name</h2>
+                        </div>
+                        <div class="stats-container">
+                            <div class="main-progress">
+                                <div class="progress-circle">
+                                    <span id="stat-percent">0%</span>
+                                    <small>Mastered</small>
+                                </div>
+                            </div>
+                            <div class="stat-breakdown">
+                                <div class="stat-pill red"><span id="count-red">0</span> Red</div>
+                                <div class="stat-pill yellow"><span id="count-yellow">0</span> Yellow</div>
+                                <div class="stat-pill green"><span id="count-green">0</span> Green</div>
+                            </div>
+                        </div>
+                        <div class="topic-actions">
+                            <input type="text" id="new-topic-name" placeholder="Enter topic name (e.g. Thermodynamics)">
+                            <button id="add-topic-btn" class="btn-primary">Add Topic</button>
+                        </div>
+
+                        <div id="topic-list" class="topic-stack">
+                            </div>
+                    </div>
+                </div>
+            </main>
+
+            <div id="test-modal" class="modal-overlay hidden">
+                <div class="modal-card">
+                    <h3>Create New Test</h3>
+                    <form id="add-test-form">
+                        <div class="input-group">
+                            <label>Subject Name</label>
+                            <input type="text" id="subject_name" placeholder="e.g. A-Level Physics" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Exam Date</label>
+                            <input type="date" id="exam_date" required>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" id="close-modal" class="btn-ghost">Cancel</button>
+                            <button type="submit" class="btn-primary">Save Test</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="upgrade-modal" class="modal-overlay hidden">
+                <div class="modal-card">
+                    <div class="upgrade-icon">🚀</div>
+                    <h3>Unlock Unlimited Tests</h3>
+                    <p>You've reached the 1-test limit on the free plan. Upgrade to Pro to track everything for a one-time payment of £14.99</p>
+                    <ul class="benefit-list">
+                        <li>✅ Unlimited Tests & Topics</li>
+                        <li>✅ Advanced Progress Stats</li>
+                        <li>✅ Priority Support</li>
+                    </ul>
+                    <div class="modal-actions">
+                        <button id="close-upgrade" class="btn-ghost">Maybe later</button>
+                        <a href="https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03" id="checkout-btn" class="btn-primary">Go Pro - £14.99</a>
+                    
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <script type="module">
+            import { supabaseClient } from './supabase.js';
+
+            // 1. Protection: If not logged in, boot them out
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) {
+                window.location.href = 'auth.html';
+            }
+
+            // 2. Logout functionality
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                const { error } = await supabaseClient.auth.signOut();
+                if (!error) {
+                    window.location.href = 'auth.html';
+                } else {
+                    alert("Error logging out: " + error.message);
+                }
+            });
+
+            
+
+            const testModal = document.getElementById('test-modal');
+            const addTestBtn = document.getElementById('add-test-btn');
+            const closeModalBtn = document.getElementById('close-modal');
+            const addTestForm = document.getElementById('add-test-form');
+
+            // 1. Open/Close Modal
+            addTestBtn.addEventListener('click', () => testModal.classList.remove('hidden'));
+            closeModalBtn.addEventListener('click', () => testModal.classList.add('hidden'));
+
+            // 2. Handle Form Submission
+            addTestForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Get current user
+                const { data: { user } } = await supabaseClient.auth.getUser();
+
+                
+                const { data: existingTests } = await supabaseClient
+                    .from('tests')
+                    .select('test_id', { count: 'exact' })
+                    .eq('user_id', user.id);
+
+                // If they have 3 tests and aren't Pro, stop them
+                if (existingTests.length >= 1 && checkProStatus()) {
+                    alert("You've reached the limit for the Free plan! Upgrade to Pro for unlimited tests.");
+                    
+                    return;
+                }
+
+                const subjectName = document.getElementById('subject_name').value;
+                const examDate = document.getElementById('exam_date').value;
+
+                const { data, error } = await supabaseClient
+                    .from('tests')
+                    .insert([
+                        { 
+                            user_id: user.id, 
+                            subject_name: subjectName, 
+                            exam_date: examDate 
+                        }
+                    ]);
+
+                if (error) {
+                    alert("Error saving test: " + error.message);
+                } else {
+                    testModal.classList.add('hidden');
+                    addTestForm.reset();
+                    // For now, we'll just refresh to show the new test
+                    location.reload(); 
+                }
+            });
+
+            // Add this to your dashboard.js
+            async function displayTests() {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                
+                // Fetch tests from your table
+                const { data: tests, error } = await supabaseClient
+                    .from('tests')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('exam_date', { ascending: true });
+
+                const listContainer = document.getElementById('test-list');
+                
+                if (error) {
+                    console.error("Error fetching tests:", error.message);
+                    return;
+                }
+
+                // Clear the "No tests yet" message
+                listContainer.innerHTML = '';
+
+                if (tests.length === 0) {
+                    listContainer.innerHTML = '<p class="empty-note">Click the green button to add your first test.</p>';
+                    return;
+                }
+
+                // Loop through tests and create clean rows
+                tests.forEach(test => {
+                    const testRow = document.createElement('div');
+                    testRow.className = 'test-item-row';
+                    
+                    testRow.innerHTML = `
+                        <div class="test-info">
+                            <strong>${test.subject_name}</strong>
+                            <span>${new Date(test.exam_date).toLocaleDateString()}</span>
+                        </div>
+                        <div class="test-row-actions">
+                            <button class="btn-view">Open →</button>
+                            <button class="btn-delete-test" title="Delete Test">×</button>
+                        </div>
+                    `;
+
+                    // Open Test
+                    testRow.querySelector('.btn-view').addEventListener('click', () => {
+                        window.openTest(test.test_id, test.subject_name);
+                    });
+
+                    // Delete Test
+                    testRow.querySelector('.btn-delete-test').addEventListener('click', async (e) => {
+                        e.stopPropagation(); // Prevents the "Open" event from firing
+                        if (confirm(`Are you sure you want to delete ${test.subject_name}?`)) {
+                            const { error } = await supabaseClient.from('tests').delete().eq('test_id', test.test_id);
+                            if (!error) location.reload();
+                        }
+                    });
+
+                    listContainer.appendChild(testRow);
+                });
+            }
+
+            // Global variable to keep track of which test is open
+            let activeTestId = null;
+
+            // 1. Function to open a test
+            window.openTest = async (testId, testName) => {
+                activeTestId = testId;
+                
+                // This is where 'undefined' was coming from
+                document.getElementById('current-test-name').innerText = testName;
+
+                document.getElementById('test-list').classList.add('hidden');
+                document.getElementById('topics-view').classList.remove('hidden');
+                
+                fetchTopics(testId);
+            };
+
+            
+            // 1. Fetch and Render Topics
+            async function fetchTopics(testId) {
+                const { data: topics, error } = await supabaseClient
+                    .from('topics')
+                    .select('*')
+                    .eq('test_id', testId)
+                    .order('topic_name', { ascending: true });
+
+                const container = document.getElementById('topic-list');
+                container.innerHTML = '';
+
+                topics.forEach(topic => {
+                    const div = document.createElement('div');
+                    const statusClass = topic.status === 0 ? 'red' : topic.status === 1 ? 'yellow' : 'green';
+                    div.className = `topic-card ${statusClass}`;
+                    
+                    div.innerHTML = `
+                        <span>${topic.topic_name}</span>
+                        <button class="btn-delete-topic">×</button>
+                    `;
+                    
+                    // Clicking the card cycles the status
+                    div.onclick = (e) => {
+                        // If they clicked the X, don't cycle the color
+                        if (e.target.classList.contains('btn-delete-topic')) return;
+                        cycleStatus(topic.topic_id, topic.status);
+                    };
+
+                    // Delete Topic logic
+                    div.querySelector('.btn-delete-topic').onclick = async () => {
+                        const { error } = await supabaseClient.from('topics').delete().eq('topic_id', topic.topic_id);
+                        if (!error) fetchTopics(activeTestId);
+                    };
+                    
+                    container.appendChild(div);
+                });
+                updateStats(topics)
+            }
+
+            // 2. The Cycle Logic: 0 -> 1 -> 2 -> 0
+            async function cycleStatus(topicId, currentStatus) {
+                const nextStatus = (currentStatus + 1) % 3;
+
+                const { error } = await supabaseClient
+                    .from('topics')
+                    .update({ status: nextStatus })
+                    .eq('topic_id', topicId);
+
+                if (!error) {
+                    
+                    fetchTopics(activeTestId); // Refresh the list to show new color
+                } else {
+                    console.error("Update failed:", error.message);
+                }
+                // Add a "pop" animation class before refreshing
+
+            }
+
+            // 3. Add a new Topic
+            document.getElementById('add-topic-btn').addEventListener('click', async () => {
+                const nameInput = document.getElementById('new-topic-name');
+                const name = nameInput.value;
+
+                if (!name) return;
+
+                const { error } = await supabaseClient
+                    .from('topics')
+                    .insert([{ test_id: activeTestId, topic_name: name, status: 0 }]);
+
+                if (!error) {
+                    nameInput.value = '';
+                    fetchTopics(activeTestId);
+                }
+            });
+
+            // 4. Back Button Logic
+            document.getElementById('back-to-tests').addEventListener('click', () => {
+                document.getElementById('test-list').classList.remove('hidden');
+                document.getElementById('topics-view').classList.add('hidden');
+            });
+
+            function updateStats(topics) {
+                const total = topics.length;
+                if (total === 0) return;
+
+                const red = topics.filter(t => t.status === 0).length;
+                const yellow = topics.filter(t => t.status === 1).length;
+                const green = topics.filter(t => t.status === 2).length;
+
+                // Calculate percentage based on Green (2) vs Total
+                const percent = Math.round((green / total) * 100);
+
+                // Update the UI
+                document.getElementById('stat-percent').innerText = `${percent}%`;
+                document.getElementById('count-red').innerText = red;
+                document.getElementById('count-yellow').innerText = yellow;
+                document.getElementById('count-green').innerText = green;
+                
+                // Bonus: Change the circle color based on progress
+                const circle = document.querySelector('.progress-circle');
+                circle.style.borderColor = percent > 70 ? '#01c511' : percent > 30 ? '#eab308' : '#ef4444';
+            }
+
+            async function checkProStatus() {
+                const { data: { user } } = await supabaseClient.auth.getUser();
+                
+                const { data: profile } = await supabaseClient
+                    .from('users')
+                    .select('is_pro')
+                    .eq('id', user.id)
+                    .single();
+
+                return profile?.is_pro || false;
+            }
+
+            // Update your Add Test button listener
+            document.getElementById('add-test-btn').addEventListener('click', async () => {
+                const isPro = await checkProStatus();
+                
+                if (!isPro) {
+                    const { count } = await supabaseClient
+                        .from('tests')
+                        .select('*', { count: 'exact', head: true });
+
+                    if (count >= 1) {
+                        document.getElementById('upgrade-modal').classList.remove('hidden');
+                        return;
+                    }
+                }
+                
+                // If they are Pro OR under the limit, show the regular add modal
+                document.getElementById('test-modal').classList.remove('hidden');
+            });
+
+
+            // Run this when the page loads
+            displayTests();
+        </script>
+    </body>
+</html>
