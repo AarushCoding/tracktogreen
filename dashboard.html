@@ -13,7 +13,7 @@
     </head>
     <body>
         <div class="app-container">
-    
+
             <header class="top-nav">
                 <div class="logo">
                     tracktogreen<span class="dot">.com</span>
@@ -22,7 +22,7 @@
 
             <main class="main-wrapper">
                 <div class="central-card">
-                    
+
                     <div class="panel-header">
                         <div class="title-section">
                             <h2>My Tests</h2>
@@ -99,13 +99,13 @@
                     <div class="modal-actions">
                         <button id="close-upgrade" class="btn-ghost">Maybe later</button>
                         <a href="https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03" id="checkout-btn" class="btn-primary">Go Pro - £14.99</a>
-                    
+
                     </div>
                 </div>
             </div>
         </div>
 
-        
+
 
         <script type="module">
             import { supabaseClient } from './supabase.js';
@@ -115,6 +115,11 @@
             if (!user) {
                 window.location.href = 'auth.html';
             }
+
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            const stripeLink = "https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03";
+            checkoutBtn.href = `${stripeLink}?client_reference_id=${user.id}`;
 
             // 2. Logout functionality
             document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -126,7 +131,7 @@
                 }
             });
 
-            
+
 
             const testModal = document.getElementById('test-modal');
             const addTestBtn = document.getElementById('add-test-btn');
@@ -144,7 +149,7 @@
                 // Get current user
                 const { data: { user } } = await supabaseClient.auth.getUser();
 
-                
+
                 const { data: existingTests } = await supabaseClient
                     .from('tests')
                     .select('test_id', { count: 'exact' })
@@ -153,7 +158,7 @@
                 // If they have 3 tests and aren't Pro, stop them
                 if (existingTests.length >= 1 && checkProStatus()) {
                     alert("You've reached the limit for the Free plan! Upgrade to Pro for unlimited tests.");
-                    
+
                     return;
                 }
 
@@ -163,10 +168,10 @@
                 const { data, error } = await supabaseClient
                     .from('tests')
                     .insert([
-                        { 
-                            user_id: user.id, 
-                            subject_name: subjectName, 
-                            exam_date: examDate 
+                        {
+                            user_id: user.id,
+                            subject_name: subjectName,
+                            exam_date: examDate
                         }
                     ]);
 
@@ -176,14 +181,14 @@
                     testModal.classList.add('hidden');
                     addTestForm.reset();
                     // For now, we'll just refresh to show the new test
-                    location.reload(); 
+                    location.reload();
                 }
             });
 
             // Add this to your dashboard.js
             async function displayTests() {
                 const { data: { user } } = await supabaseClient.auth.getUser();
-                
+
                 // Fetch tests from your table
                 const { data: tests, error } = await supabaseClient
                     .from('tests')
@@ -192,7 +197,7 @@
                     .order('exam_date', { ascending: true });
 
                 const listContainer = document.getElementById('test-list');
-                
+
                 if (error) {
                     console.error("Error fetching tests:", error.message);
                     return;
@@ -210,7 +215,7 @@
                 tests.forEach(test => {
                     const testRow = document.createElement('div');
                     testRow.className = 'test-item-row';
-                    
+
                     testRow.innerHTML = `
                         <div class="test-info">
                             <strong>${test.subject_name}</strong>
@@ -246,17 +251,17 @@
             // 1. Function to open a test
             window.openTest = async (testId, testName) => {
                 activeTestId = testId;
-                
+
                 // This is where 'undefined' was coming from
                 document.getElementById('current-test-name').innerText = testName;
 
                 document.getElementById('test-list').classList.add('hidden');
                 document.getElementById('topics-view').classList.remove('hidden');
-                
+
                 fetchTopics(testId);
             };
 
-            
+
             // 1. Fetch and Render Topics
             async function fetchTopics(testId) {
                 const { data: topics, error } = await supabaseClient
@@ -272,12 +277,12 @@
                     const div = document.createElement('div');
                     const statusClass = topic.status === 0 ? 'red' : topic.status === 1 ? 'yellow' : 'green';
                     div.className = `topic-card ${statusClass}`;
-                    
+
                     div.innerHTML = `
                         <span>${topic.topic_name}</span>
                         <button class="btn-delete-topic">×</button>
                     `;
-                    
+
                     // Clicking the card cycles the status
                     div.onclick = (e) => {
                         // If they clicked the X, don't cycle the color
@@ -290,7 +295,7 @@
                         const { error } = await supabaseClient.from('topics').delete().eq('topic_id', topic.topic_id);
                         if (!error) fetchTopics(activeTestId);
                     };
-                    
+
                     container.appendChild(div);
                 });
                 updateStats(topics)
@@ -306,7 +311,7 @@
                     .eq('topic_id', topicId);
 
                 if (!error) {
-                    
+
                     fetchTopics(activeTestId); // Refresh the list to show new color
                 } else {
                     console.error("Update failed:", error.message);
@@ -354,7 +359,7 @@
                 document.getElementById('count-red').innerText = red;
                 document.getElementById('count-yellow').innerText = yellow;
                 document.getElementById('count-green').innerText = green;
-                
+
                 // Bonus: Change the circle color based on progress
                 const circle = document.querySelector('.progress-circle');
                 circle.style.borderColor = percent > 70 ? '#01c511' : percent > 30 ? '#eab308' : '#ef4444';
@@ -362,11 +367,11 @@
 
             async function checkProStatus() {
                 const { data: { user } } = await supabaseClient.auth.getUser();
-                
+
                 const { data: profile } = await supabaseClient
                     .from('users')
                     .select('is_pro')
-                    .eq('id', user.id)
+                    .eq('user_id', user.id)
                     .single();
 
                 return profile?.is_pro || false;
@@ -375,7 +380,7 @@
             // Update your Add Test button listener
             document.getElementById('add-test-btn').addEventListener('click', async () => {
                 const isPro = await checkProStatus();
-                
+
                 if (!isPro) {
                     const { count } = await supabaseClient
                         .from('tests')
@@ -386,9 +391,10 @@
                         return;
                     }
                 }
-                
+
                 // If they are Pro OR under the limit, show the regular add modal
                 document.getElementById('test-modal').classList.remove('hidden');
+                document.getElementById('upgrade-modal').classList.toggle('hidden');
             });
 
 
