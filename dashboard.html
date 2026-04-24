@@ -97,7 +97,7 @@
                         <li>✅ Priority Support</li>
                     </ul>
                     <div class="modal-actions">
-                        <button id="close-upgrade" class="btn-ghost">Maybe later</button>
+                        <button id="close-upgrade" class="btn-ghost" >Maybe later</button>
                         <a href="https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03" id="checkout-btn" class="btn-primary">Go Pro - £14.99</a>
 
                     </div>
@@ -134,13 +134,17 @@
 
 
             const testModal = document.getElementById('test-modal');
+            const upgradeModal = document.getElementById('upgrade-modal')
             const addTestBtn = document.getElementById('add-test-btn');
             const closeModalBtn = document.getElementById('close-modal');
+            const closeUpgradeBtn = document.getElementById('close-upgrade');
             const addTestForm = document.getElementById('add-test-form');
 
             // 1. Open/Close Modal
             addTestBtn.addEventListener('click', () => testModal.classList.remove('hidden'));
             closeModalBtn.addEventListener('click', () => testModal.classList.add('hidden'));
+            closeUpgradeBtn.addEventListener('click', () => upgradeModal.classList.add('hidden'));
+            closeUpgradeBtn.addEventListener('click', () => testModal.classList.add('hidden'));
 
             // 2. Handle Form Submission
             addTestForm.addEventListener('submit', async (e) => {
@@ -368,19 +372,27 @@
             async function checkProStatus() {
                 const { data: { user } } = await supabaseClient.auth.getUser();
 
-                const { data: profile } = await supabaseClient
+                const { data, error } = await supabaseClient
                     .from('users')
                     .select('is_pro')
                     .eq('user_id', user.id)
                     .single();
 
-                return profile?.is_pro || false;
+                if (error) {
+                    console.error(error);
+                    return false;
+                }
+                
+
+                
+                
+                return data.is_pro;
             }
+
 
             // Update your Add Test button listener
             document.getElementById('add-test-btn').addEventListener('click', async () => {
                 const isPro = await checkProStatus();
-
                 if (!isPro) {
                     const { count } = await supabaseClient
                         .from('tests')
@@ -394,7 +406,7 @@
 
                 // If they are Pro OR under the limit, show the regular add modal
                 document.getElementById('test-modal').classList.remove('hidden');
-                document.getElementById('upgrade-modal').classList.toggle('hidden');
+                document.getElementById('upgrade-modal').classList.add('hidden');
             });
 
 

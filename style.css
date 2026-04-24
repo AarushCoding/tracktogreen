@@ -286,8 +286,16 @@ body {
 }
 
 .pro-tier .amount {
+    text-align: center;
     color: var(--text);
     font-size: 4.5rem; /* Bigger price for Pro */
+}
+
+.old-price {
+    transform: translateY(-50%);
+    text-decoration: line-through;
+    color: #888;
+    font-size: 1.1rem;
 }
 
 .check {
