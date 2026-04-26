@@ -10,18 +10,32 @@
         <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="style.css">
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicon/site.webmanifest" />
     </head>
     <body>
         <nav class="navbar">
+            <div class="info-banner">
+                <p class="banner-text">LAUNCH DISCOUNT! Save $6 when buying Pro with code: LAUNCH</p>
+            </div>
             <div class="nav-container">
                 <a href="/" class="logo">
-                tracktogreen<span class="dot">.com</span>
+                    tracktogreen<span class="dot">.com</span>
                 </a>
                 
+                <button class="menu-toggle" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+
                 <div class="nav-links">
-                <a href="#how-it-works">How it works</a>
-                <a href="#pricing">Pricing</a>
-                <a href="/auth.html" class="btn-auth">Login / Sign up</a>
+                    <a href="#how-it-works">How it works</a>
+                    <a href="#pricing">Pricing</a>
+                    <a href="/auth.html" class="btn-auth">Login / Sign up</a>
                 </div>
             </div>
         </nav>
@@ -29,8 +43,8 @@
         <section class="hero">
             <div class="hero-content">
                 <h1>Don't lose <span class="highlight">track</span>.</h1>
-                <p class="description">The minimalist traffic-light system to triage your exam topics and actually pass.</p>
-                <a href="/signup" class="cta-button">Get Started — it's free</a>
+                <p class="description">The minimalist traffic-light system to keep on top of your topics for your exam</p>
+                <a href="/auth.html" class="cta-button">Get Started — it's free</a>
             </div>
         </section>
 
@@ -81,34 +95,30 @@
                         <li>✓ 1 Active Test</li>
                         <li>✓ 10 Topics total</li>
                         <li>✓ Traffic Light Triage</li>
-                        <li class="locked">✕ AI Syllabus Import</li>
-                        <li class="locked">✕ Spaced Repetition</li>
-                        <li class="locked">✕ PDF Export</li>
+                        
                     </ul>
                     <a href="/auth.html" class="btn-secondary">Start Free</a>
                 </div>
 
                 <div class="price-card pro-tier">
-                    <div class="popular-badge">LAUNCH DISCOUNT!</div>
+                    <div class="popular-badge">USE CODE: LAUNCH</div>
                     <div class="card-header">
                         <h3>Lifetime Pro</h3>
                         <div class="price-full-display">
-                            <span class="old-price">£14.99</span>
+                            <span class="old-price old-price-text"></span>
                             <div class="price-display">
-                                <span class="amount">£9.99</span>
+                                <span class="amount new-price-text"></span>
                             </div>
                         </div>
                         
-                        <p>LAUNCH DISCOUNT! Save £5 when buying Pro!</p>
+                        <p>LAUNCH DISCOUNT! Save $6 when buying Pro with code: LAUNCH</p>
                     </div>
                     <ul class="features">
                         <li><span class="check">✓</span> <strong>Unlimited</strong> Tests</li>
                         <li><span class="check">✓</span> <strong>Unlimited</strong> Topics</li>
-                        <li><span class="check">✓</span> AI Syllabus Import</li>
-                        <li><span class="check">✓</span> Spaced Repetition Engine</li>
-                        <li><span class="check">✓</span> Priority Support</li>
+                        
                     </ul>
-                    <a href="/signup" class="cta-button">Unlock Everything</a>
+                    <a href="/auth.html" class="cta-button">Unlock Everything</a>
                 </div>
             </div>
         </section>
@@ -138,5 +148,71 @@
                 <p>&copy; 2026 TrackToGreen. All rights reserved.</p>
             </div>
         </footer>
+
+        <script>
+            async function applyPricing() {
+                try {
+                    const response = await fetch('price.json');
+                    const data = await response.json();
+
+                    const oldPriceElements = document.querySelectorAll('.old-price-text');
+                    const currentPriceElements = document.querySelectorAll('.new-price-text');
+
+                    if (data.isDiscountActive) {
+                        // Update all "Old Price" elements
+                        oldPriceElements.forEach(el => {
+                            el.textContent = `${data.currency}${data.originalPrice}`;
+                            el.style.display = 'inline'; // Ensure they are visible
+                        });
+
+                        // Update all "New Price" elements
+                        currentPriceElements.forEach(el => {
+                            el.textContent = `${data.currency}${data.discountPrice}`;
+                        });
+                    } else {
+                        // Hide all "Old Price" elements if no discount
+                        oldPriceElements.forEach(el => {
+                            el.style.display = 'none';
+                        });
+
+                        // Show original price in the main slot
+                        currentPriceElements.forEach(el => {
+                            el.textContent = `${data.currency}${data.originalPrice}`;
+                        });
+                    }
+                } catch (error) {
+                    console.error("Could not load pricing:", error);
+                }
+            }
+
+            
+            document.addEventListener('DOMContentLoaded', () => {
+                const menuToggle = document.querySelector('.menu-toggle');
+                const navLinks = document.querySelector('.nav-links');
+
+                if (menuToggle && navLinks) {
+                    menuToggle.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevents click from bubbling
+                        navLinks.classList.toggle('active');
+                    });
+
+                    // Close menu if user clicks anywhere else on the screen
+                    document.addEventListener('click', (e) => {
+                        if (!menuToggle.contains(e.target) && !navLinks.contains(e.target)) {
+                            navLinks.classList.remove('active');
+                        }
+                    });
+
+                    // Close menu when a link is clicked
+                    navLinks.querySelectorAll('a').forEach(link => {
+                        link.addEventListener('click', () => {
+                            navLinks.classList.remove('active');
+                        });
+                    });
+                }
+            });
+
+            window.onload = applyPricing;
+        </script>
     </body>
 </html>

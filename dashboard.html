@@ -10,6 +10,12 @@
         <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="style.css">
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+        <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicon/site.webmanifest" />
     </head>
     <body>
         <div class="app-container">
@@ -56,8 +62,12 @@
                             </div>
                         </div>
                         <div class="topic-actions">
-                            <input type="text" id="new-topic-name" placeholder="Enter topic name (e.g. Thermodynamics)">
-                            <button id="add-topic-btn" class="btn-primary">Add Topic</button>
+                            <input type="text" id="new-topic-name" maxlength="20" placeholder="Enter topic name (e.g. Thermodynamics)">
+                            <div>
+                                <button id="add-topic-btn" class="btn-primary">Add Topic</button>
+                                <button id="completed-btn" class="btn-primary">Show Completed</button>
+                            </div>
+                            
                         </div>
 
                         <div id="topic-list" class="topic-stack">
@@ -90,15 +100,31 @@
                 <div class="modal-card">
                     <div class="upgrade-icon">🚀</div>
                     <h3>Unlock Unlimited Tests</h3>
-                    <p>You've reached the 1-test limit on the free plan. Upgrade to Pro to track everything for a one-time payment of £14.99</p>
+                    <p>You've reached the 1-test limit on the free plan. Upgrade to Pro to track everything for a one-time payment of <span class="new-price-text"></span>. USE CODE: LAUNCH</p>
                     <ul class="benefit-list">
-                        <li>✅ Unlimited Tests & Topics</li>
-                        <li>✅ Advanced Progress Stats</li>
-                        <li>✅ Priority Support</li>
+                        <li>✅ Unlimited Tests</li>
+                        <li>✅ Unlimited Topics</li>
                     </ul>
                     <div class="modal-actions">
                         <button id="close-upgrade" class="btn-ghost" >Maybe later</button>
-                        <a href="https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03" id="checkout-btn" class="btn-primary">Go Pro - £14.99</a>
+                        <a href="https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03" id="checkout-btn" class="btn-primary">Go Pro - <span class="new-price-text"></span></a>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="upgrade-modal-topics" class="modal-overlay hidden">
+                <div class="modal-card">
+                    <div class="upgrade-icon">🚀</div>
+                    <h3>Unlock Unlimited Topics</h3>
+                    <p>You've reached the 5-topic limit on the free plan. Upgrade to Pro to track everything for a one-time payment of <span class="new-price-text"></span>. USE CODE: LAUNCH</p>
+                    <ul class="benefit-list">
+                        <li>✅ Unlimited Tests</li>
+                        <li>✅ Unlimited Topics</li>
+                    </ul>
+                    <div class="modal-actions">
+                        <button id="close-upgrade-topics" class="btn-ghost" >Maybe later</button>
+                        <a href="https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03" id="checkout-btn" class="btn-primary">Go Pro - <span class="new-price-text"></span></a>
 
                     </div>
                 </div>
@@ -134,17 +160,33 @@
 
 
             const testModal = document.getElementById('test-modal');
-            const upgradeModal = document.getElementById('upgrade-modal')
+            const upgradeModal = document.getElementById('upgrade-modal');
+            const upgradeTopicsModal = document.getElementById('upgrade-modal-topics');
             const addTestBtn = document.getElementById('add-test-btn');
             const closeModalBtn = document.getElementById('close-modal');
             const closeUpgradeBtn = document.getElementById('close-upgrade');
+            const closeUpgradeTopicsBtn = document.getElementById('close-upgrade-topics');
             const addTestForm = document.getElementById('add-test-form');
+            const completedBtn = document.getElementById('completed-btn');
+            let showingCompleted = false;
 
             // 1. Open/Close Modal
             addTestBtn.addEventListener('click', () => testModal.classList.remove('hidden'));
             closeModalBtn.addEventListener('click', () => testModal.classList.add('hidden'));
             closeUpgradeBtn.addEventListener('click', () => upgradeModal.classList.add('hidden'));
+            closeUpgradeTopicsBtn.addEventListener('click', () => upgradeTopicsModal.classList.add('hidden'));
             closeUpgradeBtn.addEventListener('click', () => testModal.classList.add('hidden'));
+            completedBtn.addEventListener('click', () => {
+                if (showingCompleted) {
+                    showingCompleted = false;
+                    completedBtn.innerText = "Show Completed";
+                } else {
+                    showingCompleted = true;
+                    completedBtn.innerText = "Hide Completed";
+                }
+                
+                fetchTopics(activeTestId);
+            });
 
             // 2. Handle Form Submission
             addTestForm.addEventListener('submit', async (e) => {
@@ -236,6 +278,10 @@
                         window.openTest(test.test_id, test.subject_name);
                     });
 
+                    testRow.addEventListener('click', () => {
+                        window.openTest(test.test_id, test.subject_name);
+                    });
+
                     // Delete Test
                     testRow.querySelector('.btn-delete-test').addEventListener('click', async (e) => {
                         e.stopPropagation(); // Prevents the "Open" event from firing
@@ -244,6 +290,8 @@
                             if (!error) location.reload();
                         }
                     });
+
+                    
 
                     listContainer.appendChild(testRow);
                 });
@@ -301,6 +349,12 @@
                     };
 
                     container.appendChild(div);
+
+                    if (statusClass === 'green' && !showingCompleted) {
+                        div.classList.add('hidden');
+                    } else {
+                        div.classList.remove('hidden');
+                    }
                 });
                 updateStats(topics)
             }
@@ -321,24 +375,20 @@
                     console.error("Update failed:", error.message);
                 }
                 // Add a "pop" animation class before refreshing
+                if (nextStatus === 2) {
+                    confetti({
+                        particleCount: 1000,
+                        spread: 100,
+                        origin: { y: 0.6 },
+                        colors: ['#01c511', '#ffffff'] // Use your TrackToGreen colors!
+                    });
+                }
 
             }
 
             // 3. Add a new Topic
             document.getElementById('add-topic-btn').addEventListener('click', async () => {
-                const nameInput = document.getElementById('new-topic-name');
-                const name = nameInput.value;
-
-                if (!name) return;
-
-                const { error } = await supabaseClient
-                    .from('topics')
-                    .insert([{ test_id: activeTestId, topic_name: name, status: 0 }]);
-
-                if (!error) {
-                    nameInput.value = '';
-                    fetchTopics(activeTestId);
-                }
+                
             });
 
             // 4. Back Button Logic
@@ -400,6 +450,7 @@
 
                     if (count >= 1) {
                         document.getElementById('upgrade-modal').classList.remove('hidden');
+                        applyPricing();
                         return;
                     }
                 }
@@ -407,7 +458,75 @@
                 // If they are Pro OR under the limit, show the regular add modal
                 document.getElementById('test-modal').classList.remove('hidden');
                 document.getElementById('upgrade-modal').classList.add('hidden');
+                
             });
+
+            document.getElementById('add-topic-btn').addEventListener('click', async () => {
+                const isPro = await checkProStatus();
+                if (!isPro) {
+                    const { count } = await supabaseClient
+                        .from('topics')
+                        .select('*', { count: 'exact', head: true });
+
+                    if (count >= 5) {
+                        document.getElementById('upgrade-modal-topics').classList.remove('hidden');
+                        applyPricing();
+                        return;
+                    }
+                }
+                document.getElementById('upgrade-modal-topics').classList.add('hidden');
+                const nameInput = document.getElementById('new-topic-name');
+                const name = nameInput.value;
+
+                if (!name) return;
+
+                const { error } = await supabaseClient
+                    .from('topics')
+                    .insert([{ test_id: activeTestId, topic_name: name, status: 0 }]);
+
+                if (!error) {
+                    nameInput.value = '';
+                    fetchTopics(activeTestId);
+                }
+            });
+
+            async function applyPricing() {
+                try {
+                    const response = await fetch('price.json');
+                    const data = await response.json();
+
+                    const oldPriceElements = document.querySelectorAll('.old-price-text');
+                    const currentPriceElements = document.querySelectorAll('.new-price-text');
+
+                    if (data.isDiscountActive) {
+                        // Update all "Old Price" elements
+                        oldPriceElements.forEach(el => {
+                            el.textContent = `${data.currency}${data.originalPrice}`;
+                            el.style.display = 'inline'; // Ensure they are visible
+                        });
+
+                        // Update all "New Price" elements
+                        currentPriceElements.forEach(el => {
+                            el.textContent = `${data.currency}${data.discountPrice}`;
+                        });
+                    } else {
+                        // Hide all "Old Price" elements if no discount
+                        oldPriceElements.forEach(el => {
+                            el.style.display = 'none';
+                        });
+
+                        // Show original price in the main slot
+                        currentPriceElements.forEach(el => {
+                            el.textContent = `${data.currency}${data.originalPrice}`;
+                        });
+                    }
+                } catch (error) {
+                    console.error("Could not load pricing:", error);
+                }
+            }
+
+            applyPricing;
+
 
 
             // Run this when the page loads

@@ -10,24 +10,21 @@
         <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="style.css">
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+        <link rel="shortcut icon" href="/favicon/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+        <link rel="manifest" href="/favicon/site.webmanifest" />
     </head>
     <body>
-        <nav class="navbar">
-            <div class="nav-container">
-                <a href="/" class="logo">
+        <header class="top-nav">
+            <div class="logo" href="/index.html">
                 tracktogreen<span class="dot">.com</span>
-                </a>
-                
-                <div class="nav-links">
-                <a href="#how-it-works">How it works</a>
-                <a href="#pricing">Pricing</a>
-                <a href="/signup" class="btn-auth">Login / Sign up</a>
-                </div>
             </div>
-        </nav>
+        </header>
 
         <div class="auth-wrapper">
-            <a href="/" class="logo">tracktogreen<span class="dot">.com</span></a>
+            <a href="/index.html" class="logo">tracktogreen<span class="dot">.com</span></a>
             
             <div class="auth-card">
                 <div class="auth-toggle">
@@ -46,7 +43,7 @@
                         <input type="password" placeholder="••••••••" required>
                     </div>
                     <button type="submit" class="cta-button">Log In</button>
-                    <p class="switch-text">Forgot password?</p>
+                    <p class="switch-text"></p>
                 </form>
 
                 <form id="signup-form" class="auth-form hidden">
@@ -64,7 +61,7 @@
                         <input type="password" placeholder="Min. 8 characters" required>
                     </div>
                     <button type="submit" class="cta-button">Start Tracking</button>
-                    <p class="switch-text">By signing up, you agree to our Terms.</p>
+                    <p class="switch-text"></p>
                 </form>
             </div>
         </div>

@@ -7,6 +7,10 @@
     --accent: #036d00;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 @import url('https://fonts.googleapis.com/css?family=Space%20Grotesk:700|Lexend:400');
 
 body {
@@ -15,23 +19,46 @@ body {
     color: var(--text);
     background-color: var(--background);
     margin: 0;
+    
 }
 
 .navbar {
     background-color: #ffffff;
     border-bottom: 1px solid rgba(0,0,0,0.05);
-    position: sticky;
+    position:fixed;
     top: 0;
+    left: 0;
     z-index: 1000;
-    padding: 1rem 0;
+    padding-bottom: 1rem;
+    padding-top: 0;
+    width: 100vw;
+    
 }
+
+.info-banner {
+    width: 100%;
+    background: var(--primary);
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    z-index: 1000;
+    margin-bottom: 20px;
+    color: var(--alt-text);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+
 
 .nav-container {
     max-width: 1200px;
     margin: 0 auto;
+    flex-wrap: nowrap;
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
-    align-items: center;
+    align-items: stretch;
     padding: 0 2rem;
 }
 
@@ -52,7 +79,9 @@ body {
     display: flex;
     align-items: center;
     gap: 2.5rem;
+    
 }
+
 
 .nav-links a {
     text-decoration: none;
@@ -60,6 +89,8 @@ body {
     font-size: 0.95rem;
     transition: color 0.2s ease;
 }
+
+
 
 .nav-links a:hover {
     color: var(--accent);
@@ -79,7 +110,24 @@ body {
     transform: translateY(-1px);
 }
 
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.menu-toggle span {
+    width: 25px;
+    height: 2px;
+    background-color: #1a1a1a;
+    transition: 0.3s;
+}
+
 .hero {
+    margin-top: 80px;
     height: 100vh;
     display: flex;
     align-items: center;
@@ -212,6 +260,7 @@ body {
     /* Ensure it behaves as a container for its children */
     display: block;
     clear: both;
+    
 }
 
 .pricing-grid {
@@ -433,14 +482,6 @@ body {
     }
 }
 
-@media (max-width: 768px) {
-    .nav-links {
-        gap: 1rem;
-    }
-    .nav-links a:not(.btn-signup) {
-        display: none;
-    }
-}
 
 
 /*AUTH*/
@@ -452,7 +493,7 @@ body {
     align-items: center;
     justify-content: center;
     background-color: var(--background);
-    padding: 20px;
+    padding: 30px;
 }
 
 .auth-card {
@@ -462,7 +503,7 @@ body {
     padding: 40px;
     border-radius: 32px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.03);
-    margin-top: 30px;
+    margin-top: 20px;
 }
 
 .auth-toggle {
@@ -540,6 +581,7 @@ body {
 
 
 .top-nav {
+    padding-top: 0;
     height: 80px;
     display: flex;
     justify-content: center;
@@ -929,10 +971,7 @@ body {
     transition: all 0.2s ease;
 }
 
-/* This is the critical part!
-   The 'flex: 1' tells the text to grow and take up all
-   the empty space in the middle.
-*/
+
 .topic-card span {
     flex: 1;
     text-align: left;
@@ -940,7 +979,6 @@ body {
 }
 
 .btn-delete-topic {
-    /* Keep the button at its natural size so it doesn't stretch */
     flex-shrink: 0;
     margin-left: 15px; /* Adds a little breathing room */
     margin-right: 10px;
@@ -972,6 +1010,9 @@ body {
     background: white !important;
 }
 
+
+
+
 .upgrade-icon {
     font-size: 3rem;
     margin-bottom: 10px;
@@ -994,4 +1035,196 @@ body {
     display: inline-block;
     background: linear-gradient(135deg, #01c511 0%, #00a00d 100%);
     box-shadow: 0 4px 15px rgba(1, 197, 17, 0.3);
+}
+
+@media (max-width: 768px) {
+
+    .banner-text {
+        display: inline-block;
+        padding-left: 100%; /* Starts the text off-screen to the right */
+        animation: scroll-left 15s linear infinite;
+    }
+
+    @keyframes scroll-left {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-100%); }
+    }
+
+    /* Show hamburger */
+    .menu-toggle {
+        display: flex;
+        z-index: 1001;
+    }
+
+    /* Navbar needs positioning context */
+    .navbar {
+        position: fixed;
+        width: 100%;
+        z-index: 1000;
+    }
+
+    /* Mobile menu (hidden by default) */
+    .nav-links {
+        display: none;
+        position: absolute; /* key change */
+        top: 100%;           /* sits directly under navbar */
+        left: 0;
+        width: 100%;
+        background: #fff;
+
+        flex-direction: column;
+        align-items: center; /* better than center */
+
+        padding: 20px 0;
+        gap: 0;
+
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        border-bottom: 2px solid #eee;
+    }
+
+    /* When active */
+    .nav-links.active {
+        display: flex;
+    }
+
+    /* Links */
+    .nav-links a:not(.btn-auth) {
+        display: block;
+        width: 100%;
+        padding: 15px 20px;
+
+        color: #111; /* don't rely on variables for debugging */
+        font-size: 1.1rem;
+        text-align: center;
+
+        border-bottom: 1px solid #f2f2f2;
+    }
+
+    /* Button styling */
+    .btn-auth {
+        width: 50%;
+        margin: 15px auto 0;
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .pricing-section {
+        padding: 80px 20px;
+        padding-left: 24px;
+        padding-right: 24px;
+        max-width: 1000px;
+    }
+
+    .pricing-grid {
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+        margin-top: 40px;
+        margin-bottom: 40px;
+    }
+
+    .price-card {
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+        max-width: 80%;
+        padding: 30px 25px;
+        border-radius: 20px;
+        margin-left: 50px;
+        margin-right: 50px;
+    }
+
+    /* Kill the desktop "pop out" effect */
+    .pro-tier {
+        transform: none !important;
+        order: -1; /* keep pro first if you want */
+        box-shadow: 0 10px 25px rgba(1, 197, 17, 0.12);
+    }
+
+    .free-tier {
+        order: 1;
+    }
+
+    /* Make pricing numbers scale properly */
+    .pro-tier .amount {
+        font-size: 3rem;
+    }
+
+    .price-display {
+        font-size: 2.5rem;
+    }
+
+    .old-price {
+        font-size: 0.9rem;
+    }
+
+    /* Stack features neatly */
+    .features {
+        text-align: left;
+        margin: 20px 0;
+    }
+
+    .features li {
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+
+    /* CTA buttons full width for usability */
+    .btn-secondary,
+    .cta-button {
+        width: 70%;
+        text-align: center;
+        align-self: center;
+        justify-self: center;
+    }
+
+    /* Badge positioning fix */
+    .popular-badge {
+        top: -10px;
+        font-size: 0.7rem;
+        padding: 5px 12px;
+    }
+
+    .auth-wrapper {
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    .auth-card {
+        padding: 30px 25px;
+        width: 100%;
+        max-width: 90%;
+    }
+}
+
+
+
+@media (max-width: 768px) {
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .test-info strong {
+        font-size: 1rem;
+        max-width: 10ch;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    #topics-view {
+
+    }
+
+    .topic-actions {
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: space-between;
+    }
 }
