@@ -100,7 +100,7 @@
                 <div class="modal-card">
                     <div class="upgrade-icon">🚀</div>
                     <h3>Unlock Unlimited Tests</h3>
-                    <p>You've reached the 1-test limit on the free plan. Upgrade to Pro to track everything for a one-time payment of <span class="new-price-text"></span>. USE CODE: LAUNCH</p>
+                    <p>You've reached the 2-test limit on the free plan. Upgrade to Pro to track everything for a one-time payment of <span class="new-price-text"></span>. USE CODE: LAUNCH</p>
                     <ul class="benefit-list">
                         <li>✅ Unlimited Tests</li>
                         <li>✅ Unlimited Topics</li>
@@ -117,7 +117,7 @@
                 <div class="modal-card">
                     <div class="upgrade-icon">🚀</div>
                     <h3>Unlock Unlimited Topics</h3>
-                    <p>You've reached the 5-topic limit on the free plan. Upgrade to Pro to track everything for a one-time payment of <span class="new-price-text"></span>. USE CODE: LAUNCH</p>
+                    <p>You've reached the 10-topic limit on the free plan. Upgrade to Pro to track everything for a one-time payment of <span class="new-price-text"></span>. USE CODE: LAUNCH</p>
                     <ul class="benefit-list">
                         <li>✅ Unlimited Tests</li>
                         <li>✅ Unlimited Topics</li>
@@ -448,7 +448,7 @@
                         .from('tests')
                         .select('*', { count: 'exact', head: true });
 
-                    if (count >= 1) {
+                    if (count >= 2) {
                         document.getElementById('upgrade-modal').classList.remove('hidden');
                         applyPricing();
                         return;
@@ -468,7 +468,7 @@
                         .from('topics')
                         .select('*', { count: 'exact', head: true });
 
-                    if (count >= 5) {
+                    if (count >= 10) {
                         document.getElementById('upgrade-modal-topics').classList.remove('hidden');
                         applyPricing();
                         return;
