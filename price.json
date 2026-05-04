@@ -1,8 +1,8 @@
 {
     "productName": "tracktogreen Pro",
     "originalPrice": 13.99,
-    "discountPrice": 7.99,
+    "discountPrice": 13.99,
     "discountCode": "LAUNCH",
-    "isDiscountActive": true,
+    "isDiscountActive": false,
     "currency": "$"
 }

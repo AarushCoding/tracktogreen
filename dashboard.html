@@ -9,6 +9,8 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="style.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
         <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
@@ -47,6 +49,7 @@
                         <div class="view-header">
                             <button id="back-to-tests" class="btn-ghost">← Back to all tests</button>
                             <h2 id="current-test-name">Test Name</h2>
+                            <button id="export-pdf-btn" class="btn-primary">📄 Export PDF</button>
                         </div>
                         <div class="stats-container">
                             <div class="main-progress">
@@ -99,11 +102,12 @@
             <div id="upgrade-modal" class="modal-overlay hidden">
                 <div class="modal-card">
                     <div class="upgrade-icon">🚀</div>
-                    <h3>Unlock Unlimited Tests</h3>
-                    <p>You've reached the 2-test limit on the free plan. Upgrade to Pro to track everything for a one-time payment of <span class="new-price-text"></span>. USE CODE: LAUNCH</p>
+                    <h3>Pro Feature!</h3>
+                    <p>You discovered a pro feature! Upgrade today for just <span class="new-price-text"></span>.</p>
                     <ul class="benefit-list">
                         <li>✅ Unlimited Tests</li>
                         <li>✅ Unlimited Topics</li>
+                        <li>✅ PDF Export</li>
                     </ul>
                     <div class="modal-actions">
                         <button id="close-upgrade" class="btn-ghost" >Maybe later</button>
@@ -113,22 +117,7 @@
                 </div>
             </div>
 
-            <div id="upgrade-modal-topics" class="modal-overlay hidden">
-                <div class="modal-card">
-                    <div class="upgrade-icon">🚀</div>
-                    <h3>Unlock Unlimited Topics</h3>
-                    <p>You've reached the 10-topic limit on the free plan. Upgrade to Pro to track everything for a one-time payment of <span class="new-price-text"></span>. USE CODE: LAUNCH</p>
-                    <ul class="benefit-list">
-                        <li>✅ Unlimited Tests</li>
-                        <li>✅ Unlimited Topics</li>
-                    </ul>
-                    <div class="modal-actions">
-                        <button id="close-upgrade-topics" class="btn-ghost" >Maybe later</button>
-                        <a href="https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03" id="checkout-btn" class="btn-primary">Go Pro - <span class="new-price-text"></span></a>
-
-                    </div>
-                </div>
-            </div>
+            
         </div>
 
 
@@ -161,11 +150,11 @@
 
             const testModal = document.getElementById('test-modal');
             const upgradeModal = document.getElementById('upgrade-modal');
-            const upgradeTopicsModal = document.getElementById('upgrade-modal-topics');
+            
             const addTestBtn = document.getElementById('add-test-btn');
             const closeModalBtn = document.getElementById('close-modal');
             const closeUpgradeBtn = document.getElementById('close-upgrade');
-            const closeUpgradeTopicsBtn = document.getElementById('close-upgrade-topics');
+            document.getElementById('export-pdf-btn').addEventListener('click', exportTestToPDF);
             const addTestForm = document.getElementById('add-test-form');
             const completedBtn = document.getElementById('completed-btn');
             let showingCompleted = false;
@@ -174,7 +163,6 @@
             addTestBtn.addEventListener('click', () => testModal.classList.remove('hidden'));
             closeModalBtn.addEventListener('click', () => testModal.classList.add('hidden'));
             closeUpgradeBtn.addEventListener('click', () => upgradeModal.classList.add('hidden'));
-            closeUpgradeTopicsBtn.addEventListener('click', () => upgradeTopicsModal.classList.add('hidden'));
             closeUpgradeBtn.addEventListener('click', () => testModal.classList.add('hidden'));
             completedBtn.addEventListener('click', () => {
                 if (showingCompleted) {
@@ -469,12 +457,12 @@
                         .select('*', { count: 'exact', head: true });
 
                     if (count >= 10) {
-                        document.getElementById('upgrade-modal-topics').classList.remove('hidden');
+                        document.getElementById('upgrade-modal').classList.remove('hidden');
                         applyPricing();
                         return;
                     }
                 }
-                document.getElementById('upgrade-modal-topics').classList.add('hidden');
+                document.getElementById('upgrade-modal').classList.add('hidden');
                 const nameInput = document.getElementById('new-topic-name');
                 const name = nameInput.value;
 
@@ -524,6 +512,156 @@
                     console.error("Could not load pricing:", error);
                 }
             }
+
+            async function exportTestToPDF() {
+                const isPro = await checkProStatus()
+                if (!isPro) {
+                    applyPricing();
+                    document.getElementById('upgrade-modal').classList.remove('hidden');
+                    return
+                }
+                else {
+                    document.getElementById('upgrade-modal').classList.add('hidden')
+                    const { jsPDF } = window.jspdf;
+                    // Note: Standard jsPDF doesn't load Google Fonts automatically. 
+                    // We will use 'helvetica' for the PDF to ensure it generates immediately, 
+                    // but styled to look like your Lexend/Grotesk vibe.
+                    const doc = new jsPDF();
+                    
+                    const testName = document.getElementById('current-test-name').innerText;
+                    const percent = document.getElementById('stat-percent').innerText;
+                    const { data: topics } = await supabaseClient
+                        .from('topics')
+                        .select('*')
+                        .eq('test_id', activeTestId)
+                        .order('status', { ascending: true });
+
+                    // --- HEADER SECTION ---
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(24);
+                    doc.setTextColor(1, 197, 17); // Your brand green #01c511
+                    doc.text("TrackToGreen", 14, 25);
+                    
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.setTextColor(100, 100, 100);
+                    doc.text("Revision. Organised.", 14, 32);
+
+                    // --- READINESS SCORE CARD ---
+                    doc.setDrawColor(240, 240, 240);
+                    doc.setFillColor(248, 249, 250);
+                    doc.roundedRect(135, 15, 60, 25, 3, 3, 'FD');
+                    
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(9);
+                    doc.setTextColor(120, 120, 120);
+                    doc.text("READINESS SCORE", 140, 22);
+                    
+                    doc.setFontSize(18);
+                    doc.setTextColor(45, 45, 45);
+                    doc.text(percent, 140, 33);
+
+                    // --- TITLE ---
+                    doc.setFontSize(20);
+                    doc.setTextColor(33, 37, 41);
+                    doc.text(`${testName} Report`, 14, 55);
+                    
+                    // Draw a subtle line under the title
+                    doc.setDrawColor(1, 197, 17);
+                    doc.setLineWidth(1);
+                    doc.line(14, 58, 40, 58);
+
+                    // --- TABLE PREP ---
+                    const tableRows = topics.map(topic => {
+                        let statusText = "Red (Focus Here)";
+                        if(topic.status === 1) statusText = "Yellow (Reviewing)";
+                        if(topic.status === 2) statusText = "Green (Mastered)";
+                        return [topic.topic_name, statusText, " "];
+                    });
+
+                    // --- GENERATE TABLE ---
+                    doc.autoTable({
+                        startY: 65,
+                        head: [['Topic Name', 'Status', 'Manual Check']],
+                        body: tableRows,
+                        theme: 'plain',
+                        headStyles: { 
+                            fillColor: [248, 249, 250], 
+                            textColor: [100, 100, 100],
+                            fontStyle: 'bold',
+                            fontSize: 9
+                        },
+                        bodyStyles: {
+                            fontSize: 11,
+                            cellPadding: 6,
+                            textColor: [50, 50, 50]
+                        },
+                        columnStyles: {
+                            0: { cellWidth: 90 },
+                            1: { cellWidth: 60 },
+                            2: { cellWidth: 30 }
+                        },
+                        didParseCell: function(data) {
+                            if (data.column.index === 1 && data.cell.section === 'body') {
+                                data.cell.text = ''; 
+                            }
+                            // Reset every cell to white background first to prevent "bleeding"
+                            data.cell.styles.fillColor = [255, 255, 255];
+                            data.cell.styles.lineWidth = { bottom: 0.1 };
+                            data.cell.styles.lineColor = [230, 230, 230];
+
+                            // 1. Style the Status Text
+                            if (data.column.index === 1 && data.cell.section === 'body') {
+                                const txt = data.cell.raw;
+                                if (txt.includes('Red')) data.cell.styles.textColor = [239, 68, 68];
+                                if (txt.includes('Yellow')) data.cell.styles.textColor = [234, 179, 8];
+                                if (txt.includes('Green')) data.cell.styles.textColor = [1, 197, 17];
+                            }
+
+                            // 2. Style the Manual Check Box (The right-hand column)
+                            if (data.column.index === 2 && data.cell.section === 'body') {
+                                const status = data.row.cells[1].raw; // Check the status in the same row
+                                if (status.includes('Red')) data.cell.styles.fillColor = [254, 242, 242]; // Very light red
+                                if (status.includes('Yellow')) data.cell.styles.fillColor = [255, 251, 235]; // Very light yellow
+                                if (status.includes('Green')) data.cell.styles.fillColor = [240, 253, 244]; // Very light green
+                            }
+                        },
+                        didDrawCell: function(data) {
+                            // 3. Draw the small status dot
+                            // 3. Draw the small status dot
+                            if (data.column.index === 1 && data.cell.section === 'body') {
+                                const txt = data.cell.raw;
+                                let color = [239, 68, 68];
+                                if (txt.includes('Yellow')) color = [234, 179, 8];
+                                if (txt.includes('Green')) color = [1, 197, 17];
+                                
+                                // Draw the dot
+                                doc.setFillColor(...color);
+                                doc.circle(data.cell.x + 5, data.cell.y + data.cell.height / 2, 2, 'F');
+
+                                // FIX: Clear the existing text and redraw it with a 10pt indent
+                                data.cell.text = ""; 
+                                doc.setTextColor(...data.cell.styles.textColor);
+                                doc.text(txt, data.cell.x + 10, data.cell.y + data.cell.height / 2 + 1.5);
+                            }
+                        }
+                    });
+
+                                    // --- FOOTER ---
+                    const finalY = doc.lastAutoTable.finalY + 20;
+                    doc.setFontSize(9);
+                    doc.setTextColor(160, 160, 160);
+                    doc.setFont("helvetica", "italic");
+                    doc.text("Pro Tip: Focus on the Red topics for 25 minutes each using the Pomodoro technique.", 14, finalY);
+                    doc.text(`Generated on ${new Date().toLocaleDateString()} via tracktogreen.com`, 14, finalY + 6);
+
+                    doc.save(`TrackToGreen_${testName}.pdf`);
+                }
+                
+            }
+
+            // Attach to button
+            
 
             applyPricing;
 
