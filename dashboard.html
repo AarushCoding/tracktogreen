@@ -189,12 +189,7 @@
                     .select('test_id', { count: 'exact' })
                     .eq('user_id', user.id);
 
-                // If they have 3 tests and aren't Pro, stop them
-                if (existingTests.length >= 2 && checkProStatus()) {
-                    alert("You've reached the limit for the Free plan! Upgrade to Pro for unlimited tests.");
-
-                    return;
-                }
+                
 
                 const subjectName = document.getElementById('subject_name').value;
                 const examDate = document.getElementById('exam_date').value;
