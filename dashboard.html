@@ -36,6 +36,7 @@
                             <h2>My Tests</h2>
                         </div>
                         <div class="action-section">
+                            <a target="_blank" href="https://buy.stripe.com/bJe6oJ89s53ddh6gQ5aAw03"><button id="go-pro-btn" class="btn-primary">Go <b>Pro!</b></button></a>
                             <button id="add-test-btn" class="btn-primary">+ Add Test</button>
                             <button id="logout-btn" class="btn-logout">Logout</button>
                         </div>
@@ -664,6 +665,12 @@
 
             // Run this when the page loads
             displayTests();
+
+            const isPro = await checkProStatus();
+            if (isPro) {
+                let pro = document.getElementById('go-pro-btn');
+                pro.classList.add('hidden')
+            }
         </script>
     </body>
 </html>
